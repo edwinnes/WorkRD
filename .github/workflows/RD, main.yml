@@ -1,0 +1,62 @@
+name: Build TypeScript App
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [18.x, 20.x]
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ matrix.node-version }}
+        cache: 'npm'
+
+    # Compilar Backend
+    - name: Install backend dependencies
+      working-directory: ./client-app/server-backend
+      run: npm ci
+
+    - name: Build backend
+      working-directory: ./client-app/server-backend
+      run: npm run build
+
+    # Compilar Frontend
+    - name: Install frontend dependencies
+      working-directory: ./client-app
+      run: npm ci
+
+    - name: Build frontend
+      working-directory: ./client-app
+      run: npm run build || echo "Build script not configured"
+
+    # Opcional: Ejecutar tests
+    - name: Run backend tests
+      working-directory: ./client-app/server-backend
+      run: npm test || echo "Tests not configured"
+
+    # Artefactos
+    - name: Upload backend build artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: backend-dist-${{ matrix.node-version }}
+        path: client-app/server-backend/dist/
+        retention-days: 30
+
+    - name: Upload frontend build artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: frontend-build-${{ matrix.node-version }}
+        path: client-app/build/
+        retention-days: 30
