@@ -1,0 +1,51 @@
+name: CI WorkRD Pipeline
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout del código
+        uses: actions/checkout@v3
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: Estructura del repositorio (Debug)
+        run: |
+          pwd
+          ls -la
+
+      # Pipeline para el Cliente App
+      - name: Instalar dependencias del Cliente App
+        if: hashFiles('client-app/package.json') != ''
+        run: |
+          cd client-app
+          npm ci || npm install
+
+      - name: Validar Build del Cliente App
+        if: hashFiles('client-app/package.json') != ''
+        run: |
+          cd client-app
+          npm run build --if-present
+
+      # Pipeline para el Server Backend (Panel Central)
+      - name: Instalar dependencias del Backend
+        if: hashFiles('server-backend/package.json') != ''
+        run: |
+          cd server-backend
+          npm ci || npm install
+
+      - name: Validar Build del Backend
+        if: hashFiles('server-backend/package.json') != ''
+        run: |
+          cd server-backend
+          npm run build --if-present
